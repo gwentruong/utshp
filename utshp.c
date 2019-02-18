@@ -1,15 +1,25 @@
 #include <stdio.h>
 
+typedef struct {
+    double box[4];
+    int    num_parts;
+    int    num_points;
+    int   *parts;
+    int   *points;
+} polyline;
+
 const char *print_shape_type(int x);
 void        parse_int32(unsigned char *buf, int *p, int n, int big_endian);
 void        parse_double(unsigned char *buf, double *p, int n);
 void        parse_header(FILE *fp);
+void        parse_record(FILE *fp);
 
 int main(void)
 {
     FILE *fp = fopen("test.shp","rb");
 
     parse_header(fp);
+    parse_record(fp);
 
     fclose(fp);
 }
@@ -21,7 +31,7 @@ void parse_header(FILE *fp)
 
     int code;
     parse_int32(header, &code, 1, 1);
-    printf("File code\t%d\n", code);
+    printf("File code  \t%d\n", code);
 
     int length;
     parse_int32(header + 24, &length, 1, 1);
@@ -29,15 +39,34 @@ void parse_header(FILE *fp)
 
     int vs[2];
     parse_int32(header + 28, vs, 2, 0);
-    printf("Version\t\t%d\n", vs[0]);
-    printf("Shape type\t%d (%s)\n", vs[1], print_shape_type(vs[1]));
+    printf("Version    \t%d\n", vs[0]);
+    printf("Shape type \t%d (%s)\n", vs[1], print_shape_type(vs[1]));
 
     double ranges[8];
     parse_double(header + 36, ranges, 8);
     printf("min X, min Y, max X, max Y, min Z, max Z, min M, max M\n");
-    for (int j = 0; j < 8; j++)
-        printf("%f ", ranges[j]);
+    for (int i = 0; i < 8; i++)
+        printf("%f ", ranges[i]);
     printf("\n");
+}
+
+void parse_record(FILE *fp)
+{
+    unsigned char header[8];
+    fread(header, sizeof(header), 1, fp);
+
+    int num_len[2];
+    parse_int32(header, num_len, 2, 1);
+    printf("Record number\t%d\n", num_len[0]);
+    printf("Record length\t%d\n", num_len[1]);
+
+    unsigned char content[num_len[1]];
+    fread(content, sizeof(content), 1, fp);
+
+    int shape_type;
+    parse_int32(content, &shape_type, 1, 0);
+    printf("Shape type \t%d (%s)\n", shape_type, print_shape_type(shape_type));
+
 }
 
 void parse_int32(unsigned char *buf, int *p, int n, int big_endian)
