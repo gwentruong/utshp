@@ -1,8 +1,8 @@
 #include <stdio.h>
 
-void print_shape_type(int x);
-void parse_int32(unsigned char *buf, int *p, int n, int big_endian);
-void parse_double(unsigned char *buf, double *p, int n);
+const char *print_shape_type(int x);
+void        parse_int32(unsigned char *buf, int *p, int n, int big_endian);
+void        parse_double(unsigned char *buf, double *p, int n);
 
 int main(void)
 {
@@ -61,54 +61,39 @@ void parse_double(unsigned char *buf, double *p, int n)
         p[i] = *q;
 }
 
-void print_shape_type(int x)
+const char *print_shape_type(int type)
 {
-    switch (x)
+    switch (type)
     {
         case 0:
-            printf("Null shape\n");
-            break;
+            return "Null shape";
         case 1:
-            printf("Point\n");
-            break;
+            return "Point";
         case 3:
-            printf("Polyline\n");
-            break;
+            return "Polyline";
         case 5:
-            printf("Polygon\n");
-            break;
+            return "Polygon";
         case 8:
-            printf("MultiPoint\n");
-            break;
+            return "MultiPoint";
         case 11:
-            printf("PointZ\n");
-            break;
+            return "PointZ";
         case 13:
-            printf("PolylineZ\n");
-            break;
+            return "PolylineZ";
         case 15:
-            printf("PolygonZ\n");
-            break;
+            return "PolygonZ";
         case 18:
-            printf("MultiPointZ\n");
-            break;
+            return "MultiPointZ";
         case 21:
-            printf("PointM\n");
-            break;
+            return "PointM";
         case 23:
-            printf("PolylineM\n");
-            break;
+            return "PolylineM";
         case 25:
-            printf("PolygonM\n");
-            break;
+            return "PolygonM";
         case 28:
-            printf("MultiPointM\n");
-            break;
+            return "MultiPointM";
         case 31:
-            printf("MultiPatch\n");
-            break;
+            return "MultiPatch";
         default:
-            printf("Unknown shape type\n");
-            break;
+            return "Unknown shape type";
     }
 }
