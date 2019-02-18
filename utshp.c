@@ -13,19 +13,20 @@ int main(void)
 
     int code;
     parse_int32(header, &code, 1, 1);
-    printf("File code  %d\n", code);
+    printf("File code\t%d\n", code);
 
     int length;
     parse_int32(header + 24, &length, 1, 1);
-    printf("File length %d\n", length * 2);
+    printf("File length\t%d\n", length * 2);
 
     int vs[2];
     parse_int32(header + 28, vs, 2, 0);
-    printf("Version %d, Shape type %d\n", vs[0], vs[1]);
-    print_shape_type(vs[1]);
+    printf("Version\t\t%d\n", vs[0]);
+    printf("Shape type\t%d (%s)\n", vs[1], print_shape_type(vs[1]));
 
     double ranges[8];
     parse_double(header + 36, ranges, 8);
+    printf("min X, min Y, max X, max Y, min Z, max Z, min M, max M\n");
     for (int j = 0; j < 8; j++)
         printf("%f ", ranges[j]);
     printf("\n");
