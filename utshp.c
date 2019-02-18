@@ -1,101 +1,64 @@
 #include <stdio.h>
 
 void print_shape_type(int x);
+void parse_int32(unsigned char *buf, int *p, int n, int big_endian);
+void parse_double(unsigned char *buf, double *p, int n);
 
 int main(void)
 {
     unsigned char header[100];
-    FILE *fp;
-    int   i;
-    int   j = 3;
-    char  b[4];
-
-    fp = fopen("test.shp","rb");
+    FILE *fp = fopen("test.shp","rb");
 
     fread(header, sizeof(header), 1, fp);
 
-    printf("File code\n");
-    for (i = 0; i < 4; i++)
-        printf("%02x", header[i]);
-    printf("\n");
+    int code;
+    parse_int32(header, &code, 1, 1);
+    printf("File code  %d\n", code);
 
-    printf("Unused\n");
-    for (; i < 24; i++)
-        printf("%02x", header[i]);
-    printf("\n");
+    int length;
+    parse_int32(header + 24, &length, 1, 1);
+    printf("File length %d\n", length * 2);
 
-    printf("File length\n");
-    for (; i < 28; i++)
-    {
-        printf("%02x", header[i]);
-        b[j] = header[i];
-        j--;
-    }
-    printf("\n");
-    char *pb = b;
-    int  *p  = (int *)pb;
-    printf("Int %d\n", *p);
-    printf("File size in dec %d\n", *p*2);
+    int vs[2];
+    parse_int32(header + 28, vs, 2, 0);
+    printf("Version %d, Shape type %d\n", vs[0], vs[1]);
+    print_shape_type(vs[1]);
 
-    printf("Version\n");
-    for (; i < 32; i++)
-        printf("%02x", header[i]);
-    printf("\n");
-    unsigned char *pv = header + 28;
-    p = (int *)pv;
-    printf("Version %d\n", *p);
-
-    printf("Shape type\n");
-    for (; i < 36; i++)
-        printf("%02x", header[i]);
-    printf("\n");
-    pv = header + 32;
-    p = (int *)pv;
-    print_shape_type(*p);
-
-    printf("Minimum bounding rectangle\n");
-    for (; i < 68; i++)
-        printf("%02x", header[i]);
-    printf("\n");
-    j = 0;
-    double *pd;
-    pv = header + 36 - 8;
-    while (j < 4)
-    {
-        pv = pv + 8;
-        pd = (double *)pv;
-        printf("%f ", *pd);
-        j++;
-    }
-    printf("\n");
-
-    printf("Range Z\n");
-    for (; i < 84; i++)
-        printf("%02x", header[i]);
-    printf("\n");
-    while (j < 6)
-    {
-        pv = pv + 8;
-        pd = (double *)pv;
-        printf("%f ", *pd);
-        j++;
-    }
-    printf("\n");
-
-    printf("Range M\n");
-    for (; i < 100; i++)
-        printf("%02x", header[i]);
-    printf("\n");
-    while (j < 8)
-    {
-        pv = pv + 8;
-        pd = (double *)pv;
-        printf("%f ", *pd);
-        j++;
-    }
+    double ranges[8];
+    parse_double(header + 36, ranges, 8);
+    for (int j = 0; j < 8; j++)
+        printf("%f ", ranges[j]);
     printf("\n");
 
     fclose(fp);
+}
+
+void parse_int32(unsigned char *buf, int *p, int n, int big_endian)
+{
+    if (big_endian == 0)
+    {
+        int *q = (int *)buf;
+        for (int i = 0; i < n; i++, q++)
+            p[i] = *q;
+    }
+    else
+    {
+        for (int k = 0; k < n; k++, buf += 4)
+        {
+            unsigned char b[4];
+            for (int i = 0, j = 3; i < 4; i++, j--)
+                b[j] = buf[i];
+            int *q = (int *)b;
+            p[k] = *q;
+        }
+    }
+}
+
+void parse_double(unsigned char *buf, double *p, int n)
+{
+    double *q = (double *)buf;
+    for (int i = 0; i < n; i++, q++)
+        p[i] = *q;
 }
 
 void print_shape_type(int x)
