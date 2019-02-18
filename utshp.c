@@ -3,12 +3,20 @@
 const char *print_shape_type(int x);
 void        parse_int32(unsigned char *buf, int *p, int n, int big_endian);
 void        parse_double(unsigned char *buf, double *p, int n);
+void        parse_header(FILE *fp);
 
 int main(void)
 {
-    unsigned char header[100];
     FILE *fp = fopen("test.shp","rb");
 
+    parse_header(fp);
+
+    fclose(fp);
+}
+
+void parse_header(FILE *fp)
+{
+    unsigned char header[100];
     fread(header, sizeof(header), 1, fp);
 
     int code;
@@ -30,8 +38,6 @@ int main(void)
     for (int j = 0; j < 8; j++)
         printf("%f ", ranges[j]);
     printf("\n");
-
-    fclose(fp);
 }
 
 void parse_int32(unsigned char *buf, int *p, int n, int big_endian)
