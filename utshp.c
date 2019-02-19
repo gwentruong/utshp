@@ -1,66 +1,6 @@
 #include <stdio.h>
 #include <stdlib.h>
-
-typedef struct point {
-    double x;
-    double y;
-} Point;
-
-typedef struct polyline {
-    double  box[4];
-    int     num_parts;
-    int     num_points;
-    int    *parts;
-    Point  *points;
-} PolyLine;
-
-typedef struct record {
-    int            num;
-    int            len;
-    int            shape_type;
-    PolyLine      *polyline;
-    struct record *next;
-} Record;
-
-void        parse_header(FILE *fp);
-Record     *parse_record(FILE *fp);
-PolyLine   *parse_polyline(unsigned char *buf);
-Point      *parse_points(unsigned char *buf, int num_points);
-void        parse_int32(unsigned char *buf, int *p, int n, int big_endian);
-void        parse_double(unsigned char *buf, double *p, int n);
-int         record_prepend(Record **p_head, Record *new_record);
-void        record_reverse(Record **p_head);
-int         record_length(Record *head);
-void        record_free(Record *head);
-void        record_nth_print(Record *head, int n);
-const char *shape_type(int x);
-
-int main(void)
-{
-    FILE   *fp = fopen("test.shp", "rb");
-    Record *record = NULL;
-    char    buf[256];
-    int     n;
-
-    parse_header(fp);
-
-    while (record_prepend(&record, parse_record(fp)) == 0)
-        ;
-    record_reverse(&record);
-
-    while (1)
-    {
-        printf("Enter record number ('q' to quit): ");
-        scanf("%s", buf);
-        n = atoi(buf);
-        if (n == 0)
-            break;
-        record_nth_print(record, n);
-    }
-
-    record_free(record);
-    fclose(fp);
-}
+#include "utshp.h"
 
 void parse_header(FILE *fp)
 {
