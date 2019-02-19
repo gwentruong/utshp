@@ -17,15 +17,17 @@ const char *print_shape_type(int x);
 void        parse_int32(unsigned char *buf, int *p, int n, int big_endian);
 void        parse_double(unsigned char *buf, double *p, int n);
 void        parse_header(FILE *fp);
-void        parse_record(FILE *fp);
+int         parse_record(FILE *fp);
 void        parse_points(unsigned char *buf, int num_points);
 
 int main(void)
 {
-    FILE *fp = fopen("test.shp","rb");
+    FILE *fp  = fopen("test.shp", "rb");
 
     parse_header(fp);
-    parse_record(fp);
+
+    while (parse_record(fp) != 0)
+        continue;
 
     fclose(fp);
 }
@@ -56,7 +58,7 @@ void parse_header(FILE *fp)
     printf("\n");
 }
 
-void parse_record(FILE *fp)
+int parse_record(FILE *fp)
 {
     unsigned char header[8];
     fread(header, sizeof(header), 1, fp);
@@ -73,6 +75,8 @@ void parse_record(FILE *fp)
     int shape_type;
     parse_int32(content, &shape_type, 1, 0);
     printf("Shape type \t%d (%s)\n", shape_type, print_shape_type(shape_type));
+    if (shape_type <= 0)
+        return 0;
 
     double box[4];
     parse_double(content + 4, box, 4);
@@ -95,6 +99,7 @@ void parse_record(FILE *fp)
 
     parse_points(content + 44 + (4 * parts_points[0]), parts_points[1]);
 
+    return shape_type;
 }
 
 void parse_points(unsigned char *buf, int num_points)
@@ -103,7 +108,7 @@ void parse_points(unsigned char *buf, int num_points)
     {
         double xy[2];
         parse_double(buf, xy, 2);
-        printf("Point[%d]\tX\t%f\tY\t%f\n", i + 1, xy[0], xy[1]);
+        printf("Point[%d]\tX\t%f\tY\t%f\n", i, xy[0], xy[1]);
     }
 }
 
