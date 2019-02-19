@@ -1,4 +1,5 @@
 #include <stdio.h>
+#include <stdlib.h>
 
 typedef struct {
     double x;
@@ -13,12 +14,20 @@ typedef struct {
     Point  *points;
 } PolyLine;
 
-const char *print_shape_type(int x);
-void        parse_int32(unsigned char *buf, int *p, int n, int big_endian);
-void        parse_double(unsigned char *buf, double *p, int n);
+typedef struct Record {
+    int record_num;
+    int record_len;
+    int shape_type;
+    PolyLine polyline;
+    struct Record *next;
+} Record;
+
 void        parse_header(FILE *fp);
 int         parse_record(FILE *fp);
-void        parse_points(unsigned char *buf, int num_points);
+Point      *parse_points(unsigned char *buf, int num_points);
+void        parse_int32(unsigned char *buf, int *p, int n, int big_endian);
+void        parse_double(unsigned char *buf, double *p, int n);
+const char *print_shape_type(int x);
 
 int main(void)
 {
@@ -26,8 +35,9 @@ int main(void)
 
     parse_header(fp);
 
-    while (parse_record(fp) == 1)
-        continue;
+    parse_record(fp);
+    // while (parse_record(fp) == 1)
+    //     continue;
 
     fclose(fp);
 }
@@ -97,19 +107,29 @@ int parse_record(FILE *fp)
         printf("%d ", parts[i]);
     printf("\n");
 
-    parse_points(content + 44 + (4 * parts_points[0]), parts_points[1]);
+    Point *points = parse_points(content + 44 + (4 * parts_points[0]),
+                                                    parts_points[1]);
+    for (i = 0; i < parts_points[1]; i++)
+        printf("Point[%d]\tX %f\t Y %f\n", i, points[i].x, points[i].y);
+
+    free(points);
 
     return check;
 }
 
-void parse_points(unsigned char *buf, int num_points)
+Point *parse_points(unsigned char *buf, int num_points)
 {
+    Point *points = malloc(sizeof(Point) * num_points);
+
     for (int i = 0; i < num_points; i++, buf += 16)
     {
         double xy[2];
         parse_double(buf, xy, 2);
-        printf("Point[%d]\tX\t%f\tY\t%f\n", i, xy[0], xy[1]);
+        points[i].x = xy[0];
+        points[i].y = xy[1];
     }
+
+    return points;
 }
 
 void parse_int32(unsigned char *buf, int *p, int n, int big_endian)
