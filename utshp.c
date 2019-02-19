@@ -15,10 +15,10 @@ typedef struct {
 } PolyLine;
 
 typedef struct record {
-    int record_num;
-    int record_len;
+    int num;
+    int len;
     int shape_type;
-    PolyLine polyline;
+    PolyLine *polyline;
     struct record *next;
 } Record;
 
@@ -37,7 +37,7 @@ int main(void)
     parse_header(fp);
 
     parse_record(fp);
-    // parse_record(fp);
+    parse_record(fp);
     // while (parse_record(fp) == 1)
     //     continue;
 
@@ -73,27 +73,35 @@ void parse_header(FILE *fp)
 int parse_record(FILE *fp)
 {
     unsigned char header[8];
+    Record *record = malloc(sizeof(Record));
     int check = fread(header, sizeof(header), 1, fp);
     if (check != 1)
         return 0;
 
     int num_len[2];
     parse_int32(header, num_len, 2, 1);
-    printf("Record number\t%d\n", num_len[0]);
-    printf("Record length\t%d\n", num_len[1] * 2);
+    record->num = num_len[0];
+    record->len = num_len[1] * 2;
+    printf("Record number\t%d\n", record->num);
+    printf("Record length\t%d\n", record->len);
 
     unsigned char content[num_len[1] * 2];
     fread(content, sizeof(content), 1, fp);
 
     int shape_type;
     parse_int32(content, &shape_type, 1, 0);
-    printf("Shape type \t%d (%s)\n", shape_type, print_shape_type(shape_type));
+    record->shape_type = shape_type;
+    printf("Shape type \t%d (%s)\n", record->shape_type,
+            print_shape_type(record->shape_type));
 
-    PolyLine *polyline = parse_polyline(content + 4);
+    record->polyline = parse_polyline(content + 4);
 
-    free(polyline->points);
-    free(polyline->parts);
-    free(polyline);
+    record->next = NULL;
+
+    free(record->polyline->points);
+    free(record->polyline->parts);
+    free(record->polyline);
+    free(record);
 
     return check;
 }
