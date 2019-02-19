@@ -26,7 +26,7 @@ int main(void)
 
     parse_header(fp);
 
-    while (parse_record(fp) != 0)
+    while (parse_record(fp) == 1)
         continue;
 
     fclose(fp);
@@ -61,7 +61,9 @@ void parse_header(FILE *fp)
 int parse_record(FILE *fp)
 {
     unsigned char header[8];
-    fread(header, sizeof(header), 1, fp);
+    int check = fread(header, sizeof(header), 1, fp);
+    if (check != 1)
+        return 0;
     int i;
 
     int num_len[2];
@@ -75,8 +77,6 @@ int parse_record(FILE *fp)
     int shape_type;
     parse_int32(content, &shape_type, 1, 0);
     printf("Shape type \t%d (%s)\n", shape_type, print_shape_type(shape_type));
-    if (shape_type <= 0)
-        return 0;
 
     double box[4];
     parse_double(content + 4, box, 4);
@@ -99,7 +99,7 @@ int parse_record(FILE *fp)
 
     parse_points(content + 44 + (4 * parts_points[0]), parts_points[1]);
 
-    return shape_type;
+    return check;
 }
 
 void parse_points(unsigned char *buf, int num_points)
