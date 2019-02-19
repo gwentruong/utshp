@@ -14,16 +14,17 @@ typedef struct {
     Point  *points;
 } PolyLine;
 
-typedef struct Record {
+typedef struct record {
     int record_num;
     int record_len;
     int shape_type;
     PolyLine polyline;
-    struct Record *next;
+    struct record *next;
 } Record;
 
 void        parse_header(FILE *fp);
 int         parse_record(FILE *fp);
+PolyLine   *parse_polyline(unsigned char *buf);
 Point      *parse_points(unsigned char *buf, int num_points);
 void        parse_int32(unsigned char *buf, int *p, int n, int big_endian);
 void        parse_double(unsigned char *buf, double *p, int n);
@@ -36,6 +37,7 @@ int main(void)
     parse_header(fp);
 
     parse_record(fp);
+    // parse_record(fp);
     // while (parse_record(fp) == 1)
     //     continue;
 
@@ -74,7 +76,6 @@ int parse_record(FILE *fp)
     int check = fread(header, sizeof(header), 1, fp);
     if (check != 1)
         return 0;
-    int i;
 
     int num_len[2];
     parse_int32(header, num_len, 2, 1);
@@ -88,33 +89,58 @@ int parse_record(FILE *fp)
     parse_int32(content, &shape_type, 1, 0);
     printf("Shape type \t%d (%s)\n", shape_type, print_shape_type(shape_type));
 
-    double box[4];
-    parse_double(content + 4, box, 4);
-    printf("Box Xmin, Ymin, Xmax, Ymax\n");
-    for (i = 0; i < 4; i++)
-        printf("%f\t", box[i]);
-    printf("\n");
+    PolyLine *polyline = parse_polyline(content + 4);
 
-    int parts_points[2];
-    parse_int32(content + 36, parts_points, 2, 0);
-    printf("NumParts\t%d\n", parts_points[0]);
-    printf("NumPoints\t%d\n", parts_points[1]);
-
-    int parts[parts_points[0]];
-    parse_int32(content + 44, parts, parts_points[0], 0);
-    printf("Parts    \t");
-    for (i = 0; i < parts_points[0]; i++)
-        printf("%d ", parts[i]);
-    printf("\n");
-
-    Point *points = parse_points(content + 44 + (4 * parts_points[0]),
-                                                    parts_points[1]);
-    for (i = 0; i < parts_points[1]; i++)
-        printf("Point[%d]\tX %f\t Y %f\n", i, points[i].x, points[i].y);
-
-    free(points);
+    free(polyline->points);
+    free(polyline->parts);
+    free(polyline);
 
     return check;
+}
+
+PolyLine *parse_polyline(unsigned char *buf)
+{
+    PolyLine *polyline = malloc(sizeof(PolyLine));
+    int i;
+
+    double box[4];
+    parse_double(buf, box, 4);
+    printf("Box Xmin, Ymin, Xmax, Ymax\n");
+    for (i = 0; i < 4; i++)
+    {
+        polyline->box[i] = box[i];
+        printf("%f\t", polyline->box[i]);
+    }
+    printf("\n");
+
+
+    int parts_points[2];
+    parse_int32(buf + 32, parts_points, 2, 0);
+    polyline->num_parts  = parts_points[0];
+    polyline->num_points = parts_points[1];
+    printf("NumParts\t%d\n", polyline->num_parts);
+    printf("NumPoints\t%d\n", polyline->num_points);
+
+    int parts[polyline->num_parts];
+    polyline->parts = malloc(sizeof(int) * polyline->num_parts);
+    parse_int32(buf + 40, parts, polyline->num_parts, 0);
+    printf("Parts    \t");
+    for (i = 0; i < polyline->num_parts; i++)
+    {
+        polyline->parts[i] = parts[i];
+        printf("%d ", polyline->parts[i]);
+    }
+    printf("\n");
+
+    polyline->points = parse_points(buf + 40 + (4 * polyline->num_parts),
+                                    polyline->num_points);
+    for (i = 0; i < polyline->num_points; i++)
+    {
+        printf("Point[%d]\tX %f\t Y %f\n", i, polyline->points[i].x,
+                                              polyline->points[i].y);
+    }
+
+    return polyline;
 }
 
 Point *parse_points(unsigned char *buf, int num_points)
