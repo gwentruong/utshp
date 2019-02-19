@@ -23,7 +23,9 @@ typedef struct record {
 } Record;
 
 void        parse_header(FILE *fp);
-int         parse_record(FILE *fp);
+Record     *parse_record(FILE *fp);
+int         append(Record **p_head, Record *new_record);
+void        free_record(Record *head);
 PolyLine   *parse_polyline(unsigned char *buf);
 Point      *parse_points(unsigned char *buf, int num_points);
 void        parse_int32(unsigned char *buf, int *p, int n, int big_endian);
@@ -36,11 +38,12 @@ int main(void)
 
     parse_header(fp);
 
-    parse_record(fp);
-    parse_record(fp);
-    // while (parse_record(fp) == 1)
-    //     continue;
+    Record *record = NULL;
 
+    while (append(&record, parse_record(fp)) == 1)
+        continue;
+
+    free_record(record);
     fclose(fp);
 }
 
@@ -70,13 +73,13 @@ void parse_header(FILE *fp)
     printf("\n");
 }
 
-int parse_record(FILE *fp)
+Record *parse_record(FILE *fp)
 {
     unsigned char header[8];
     Record *record = malloc(sizeof(Record));
     int check = fread(header, sizeof(header), 1, fp);
     if (check != 1)
-        return 0;
+        return NULL;
 
     int num_len[2];
     parse_int32(header, num_len, 2, 1);
@@ -98,12 +101,39 @@ int parse_record(FILE *fp)
 
     record->next = NULL;
 
-    free(record->polyline->points);
-    free(record->polyline->parts);
-    free(record->polyline);
-    free(record);
+    return record;
+}
 
-    return check;
+int append(Record **p_head, Record *new_record)
+{
+    int result = 1;
+    if (new_record == NULL)
+        return 0;
+
+    Record *p = *p_head;
+    if (p == NULL)
+        *p_head = new_record;
+    else
+    {
+        while (p->next != NULL)
+            p = p->next;
+
+        p->next = new_record;
+        new_record->next = NULL;
+    }
+    return result;
+}
+
+void free_record(Record *head)
+{
+    for (Record *p = head; p != NULL; p = head)
+    {
+        head = head->next;
+        free(p->polyline->points);
+        free(p->polyline->parts);
+        free(p->polyline);
+        free(p);
+    }
 }
 
 PolyLine *parse_polyline(unsigned char *buf)
