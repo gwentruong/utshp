@@ -28,7 +28,8 @@ PolyLine   *parse_polyline(unsigned char *buf);
 Point      *parse_points(unsigned char *buf, int num_points);
 void        parse_int32(unsigned char *buf, int *p, int n, int big_endian);
 void        parse_double(unsigned char *buf, double *p, int n);
-int         record_append(Record **p_head, Record *new_record);
+int         record_prepend(Record **p_head, Record *new_record);
+void        record_reverse(Record **p_head);
 int         record_len(Record *head);
 void        record_free(Record *head);
 void        record_nth_print(Record *head, int n);
@@ -44,8 +45,9 @@ int main(void)
 
     parse_header(fp);
 
-    while (record_append(&record, parse_record(fp)) == 1)
+    while (record_prepend(&record, parse_record(fp)) == 1)
         continue;
+    record_reverse(&record);
 
     while (1)
     {
@@ -182,24 +184,33 @@ void parse_double(unsigned char *buf, double *p, int n)
         p[i] = *q;
 }
 
-int record_append(Record **p_head, Record *new_record)
+int record_prepend(Record **p_head, Record *new_record)
 {
     int result = 1;
     if (new_record == NULL)
         return 0;
 
-    Record *p = *p_head;
-    if (p == NULL)
-        *p_head = new_record;
-    else
-    {
-        while (p->next != NULL)
-            p = p->next;
+    new_record->next = *p_head;
+    *p_head = new_record;
 
-        p->next = new_record;
-        new_record->next = NULL;
-    }
     return result;
+}
+
+void record_reverse(Record **p_head)
+{
+    Record *prev = NULL;
+    Record *current = *p_head;
+    Record *next;
+
+    while (current != NULL)
+    {
+        next = current->next;
+        current->next = prev;
+        prev = current;
+        current = next;
+    }
+
+    *p_head = prev;
 }
 
 int record_len(Record *head)
