@@ -43,12 +43,14 @@ int main(int argc, char **argv)
     Record *record = NULL;
     char    buf[256];
     int     n;
+    int     len = 0;
 
     int shape_type = parse_header(fp);
 
     while (record_prepend(&record, parse_record(fp)) == 0)
-        ;
+        len++;
     record_reverse(&record);
+    printf("Total number of record\t%d\n", len);
 
     while (1)
     {
