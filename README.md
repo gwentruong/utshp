@@ -40,4 +40,4 @@ Point[1]	X 381208.493000	Y 6672606.977000
 
 **References**
 1. [Shapefile, Wikipedia](https://en.wikipedia.org/wiki/Shapefile)
-2. [ERSI Shapefile Technical Description, July 1988](https://www.esri.com/library/whitepapers/pdfs/shapefile.pdf)
+2. [ERSI Shapefile Technical Description](https://www.esri.com/library/whitepapers/pdfs/shapefile.pdf)
