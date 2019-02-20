@@ -3,7 +3,7 @@
 #include <math.h>
 #include "utshp.h"
 
-void parse_header(FILE *fp)
+int parse_header(FILE *fp)
 {
     unsigned char header[100];
     int           code;
@@ -25,6 +25,8 @@ void parse_header(FILE *fp)
     for (int i = 0; i < 8; i++)
         printf("%f ", ranges[i]);
     printf("\n");
+
+    return vs[1];
 }
 
 void parse_int32(unsigned char *buf, int *p, int n, int big_endian)
@@ -91,16 +93,6 @@ int record_length(Record *head)
         len++;
 
     return len;
-}
-
-void record_free(Record *head)
-{
-    for (Record *p = head; p != NULL; p = head)
-    {
-        head = head->next;
-        free(p->shape);
-        free(p);
-    }
 }
 
 const char *shape_type(int type)

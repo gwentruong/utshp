@@ -26,7 +26,9 @@ Record   *parse_record(FILE *fp);
 PolyLine *parse_polyline(unsigned char *buf);
 Point    *parse_points(unsigned char *buf, int num_points);
 PointM   *parse_pointM(unsigned char *buf);
+int      *parse_parts(unsigned char *buf, int num_parts);
 void      record_nth_print(Record *head, int n);
+void      record_free(Record *head, int shape_type);
 
 int main(int argc, char **argv)
 {
@@ -42,7 +44,7 @@ int main(int argc, char **argv)
     char    buf[256];
     int     n;
 
-    parse_header(fp);
+    int shape_type = parse_header(fp);
 
     while (record_prepend(&record, parse_record(fp)) == 0)
         ;
@@ -50,7 +52,7 @@ int main(int argc, char **argv)
 
     while (1)
     {
-        printf("Enter record number ('q' to quit): ");
+        printf("\n>>> Enter record number ('q' to quit): ");
         scanf("%s", buf);
         n = atoi(buf);
         if (n == 0)
@@ -58,7 +60,7 @@ int main(int argc, char **argv)
         record_nth_print(record, n);
     }
 
-    record_free(record);
+    record_free(record, shape_type);
     fclose(fp);
 }
 
@@ -119,12 +121,19 @@ PolyLine *parse_polyline(unsigned char *buf)
         polyline->box[i] = box[i];
     polyline->num_parts  = parts_points[0];
     polyline->num_points = parts_points[1];
-    polyline->parts      = malloc(sizeof(int) * polyline->num_parts);
-    parse_int32(buf + 40, polyline->parts, polyline->num_parts, 0);
+    polyline->parts      = parse_parts(buf + 40, polyline->num_parts);
     polyline->points     = parse_points(buf + 40 + (4 * polyline->num_parts),
                                         polyline->num_points);
 
     return polyline;
+}
+
+int *parse_parts(unsigned char *buf, int num_parts)
+{
+    int *parts = malloc(sizeof(int) * num_parts);
+    parse_int32(buf, parts, num_parts, 0);
+
+    return parts;
 }
 
 Point *parse_points(unsigned char *buf, int num_points)
@@ -148,7 +157,7 @@ Point *parse_points(unsigned char *buf, int num_points)
 PointM *parse_pointM(unsigned char *buf)
 {
     PointM *pointm = malloc(sizeof(PointM));
-#if 0
+#if 1
     // Only works on 64-bit machines
     parse_double(buf, (double *)pointm, 3);
 #else
@@ -174,13 +183,11 @@ void record_nth_print(Record *head, int n)
         printf("This record doesn't exist\n");
         return;
     }
-    else
-    {
-        for (i = 0; i < n - 1; i++)
-            record = record->next;
-    }
 
-    printf("Record number\t%d\n", record->num);
+    for (i = 0; i < n - 1; i++)
+        record = record->next;
+
+    printf("\nRecord number\t%d\n", record->num);
     printf("Record length\t%d\n", record->len);
     printf("Shape type \t%d (%s)\n", record->shape_type,
                             shape_type(record->shape_type));
@@ -223,5 +230,31 @@ void record_nth_print(Record *head, int n)
                                                        pointm->m);
             }
             break;
+    }
+}
+
+void record_free(Record *head, int shape_type)
+{
+    PolyLine *polyline;
+
+    for (Record *p = head; p != NULL; p = head)
+    {
+        head = head->next;
+        switch (shape_type)
+        {
+            case 1:
+            case 21:
+                free(p->shape);
+                free(p);
+                break;
+            case 3:
+            case 5:
+                polyline = p->shape;
+                free(polyline->points);
+                free(polyline->parts);
+                free(polyline);
+                free(p);
+                break;
+        }
     }
 }
