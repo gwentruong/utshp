@@ -1,2 +1,2 @@
 all:
-	gcc -Wall -Werror main.c utshp.c -o main
+	gcc -Wall -Werror main.c utshp.c -o utshp
