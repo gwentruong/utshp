@@ -156,10 +156,7 @@ PointM *parse_pointM(unsigned char *buf)
     parse_double(buf, xym, 3);
     pointm->x = xym[0];
     pointm->y = xym[1];
-    if (xym[2] < pow(-10, 38))
-        pointm->m = 0;
-    else
-        pointm->m = xym[2];
+    pointm->m = xym[2];
 #endif
     return pointm;
 }
@@ -218,7 +215,13 @@ void record_nth_print(Record *head, int n)
             break;
         case 21:
             pointm = record->shape;
-            printf("Point\tX %f\t\tY %f\tM %f\n", pointm->x, pointm->y, pointm->m);
+            if (pointm->m < - pow(10, 38))
+                printf("PointM\tX %f\t\tY %f\t M NaN\n", pointm->x, pointm->y);
+            else
+            {
+                printf("PointM\tX %f\t\tY %f\tM %f\n", pointm->x, pointm->y,
+                                                       pointm->m);
+            }
             break;
     }
 }
