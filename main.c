@@ -180,7 +180,7 @@ void record_nth_print(Record *head, int n)
     PointM   *pointm;
     int       i;
 
-    if (n >= record_length(head))
+    if (n > record_length(head))
     {
         printf("This record doesn't exist\n");
         return;
